@@ -1,0 +1,39 @@
+# escape=`
+
+FROM dbo/e4k-vs19:latest
+
+################## METADATA ######################
+LABEL base_image="mono:latest"
+LABEL version="1"
+LABEL software="ThermoRawFileParser-WindowsJavaWrapper"
+LABEL software.version="1.2.3"
+LABEL about.summary="A wrapper of the ThermoRawFileParser"
+
+################## MAINTAINER ######################
+MAINTAINER David Bouyssie
+
+################## INSTALLATION ######################
+
+### Move to dev folder
+WORKDIR C:/dev/
+
+### Clone the ThermoRawFileParser fork repo
+RUN git clone -b master --single-branch https://github.com/david-bouyssie/ThermoRawFileParser.git
+WORKDIR C:/dev/ThermoRawFileParser
+
+RUN "msbuild.exe /p:AllowUnsafeBlocks=true"
+
+WORKDIR C:/dev/
+
+### Create a script which will be called by the user to generate the bindings
+RUN (echo @echo off & echo.`
+& echo IF NOT EXIST C:\output echo C:\output must be mounted as a volume & echo.`
+& echo IF NOT EXIST C:\output EXIT 1 & echo.`
+& echo mkdir C:\output\lib `
+& echo xcopy C:\dev\ThermoRawFileParser\bin\x64\Debug C:\output\lib /S /Q & echo.`
+& echo cd C:\dev\Embeddinator-4000\build\lib\Debug\ `
+& echo "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat" ^&^& Embeddinator-4000.exe -v -gen Java -p Windows -c -t shared -o C:/output/windows_wrapper C:/output/lib/ThermoRawFileParser.dll `
+) > bindgen.bat
+
+# Define the entry point for the docker container.
+ENTRYPOINT ["C:\\dev\\bindgen.bat"]

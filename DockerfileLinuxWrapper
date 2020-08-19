@@ -1,0 +1,62 @@
+################## BASE IMAGE ######################
+FROM mono:latest
+
+################## METADATA ######################
+LABEL base_image="mono:latest"
+LABEL version="1"
+LABEL software="ThermoRawFileParser-LinuxJavaWrapper"
+LABEL software.version="1.2.3"
+LABEL about.summary="A wrapper of the ThermoRawFileParser"
+
+################## MAINTAINER ######################
+MAINTAINER David Bouyssie
+
+################## INSTALLATION ######################
+
+### Minor fix required for OpenJDK installation (see: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=863199#23) ###
+RUN mkdir /usr/share/man/man1/
+
+### Update package manager and install required features ###
+RUN apt-get update
+RUN apt-get install -y android-sdk clang git unzip wget
+#libglib2.0-dev
+
+### Override Java installation (we need JDK8) ###
+### See: https://installvirtual.com/install-java-8-on-debian-10-buster/
+RUN apt-get install -y gnupg software-properties-common
+RUN wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | apt-key add -
+RUN add-apt-repository --yes https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ && apt-get update
+RUN apt-get install -y adoptopenjdk-8-hotspot
+RUN update-alternatives --set java /usr/lib/jvm/adoptopenjdk-8-hotspot-amd64/bin/java
+ENV JAVA_HOME /usr/lib/jvm/adoptopenjdk-8-hotspot-amd64/
+
+### Sets the working directory ###
+WORKDIR /home/
+
+### Clone the ThermoRawFileParser fork repo ###
+#RUN 
+#WORKDIR /home/ThermoRawFileParser/
+#RUN msbuild /p:AllowUnsafeBlocks=true
+#WORKDIR /home/
+
+### Clone the Embeddinator-4000 fork repo ###
+RUN git clone https://github.com/david-bouyssie/Embeddinator-4000.git
+WORKDIR /home/Embeddinator-4000/build
+
+### Download the Embeddinator-4000 fork release inside the cloned repo ###
+RUN mkdir -p ./lib/Debug
+WORKDIR /home/Embeddinator-4000/build/lib/Debug
+RUN wget https://github.com/david-bouyssie/Embeddinator-4000/releases/download/8e7dc98/Embeddinator-4000_8e7dc98.zip
+RUN unzip Embeddinator-4000_8e7dc98.zip
+
+### Execute Embeddinator-4000 ###
+RUN chmod +x Embeddinator-4000.exe
+
+RUN echo 'cd /home/ \n\
+git clone -b master --single-branch https://github.com/david-bouyssie/ThermoRawFileParser.git \n\
+cd /home/ThermoRawFileParser/ \n\
+msbuild /p:AllowUnsafeBlocks=true \n\
+cd /home/Embeddinator-4000/build/lib/Debug/ \n\
+mono Embeddinator-4000.exe -v -gen Java -p Linux -c -t shared -o /home/linux_wrapper /home/ThermoRawFileParser/bin/x64/Debug/ThermoRawFileParser.dll' > bindgen.sh 
+
+ENTRYPOINT ["/bin/bash","/home/Embeddinator-4000/build/lib/Debug/bindgen.sh"]
