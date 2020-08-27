@@ -21,7 +21,7 @@ WORKDIR C:/dev/
 RUN git clone -b master --single-branch https://github.com/david-bouyssie/ThermoRawFileParser.git
 WORKDIR C:/dev/ThermoRawFileParser
 
-RUN "msbuild.exe /p:AllowUnsafeBlocks=true"
+RUN "msbuild.exe /p:AllowUnsafeBlocks=true /p:Configuration=Release /p:Platform=x64"
 
 WORKDIR C:/dev/
 
@@ -30,7 +30,7 @@ RUN (echo @echo off & echo.`
 & echo IF NOT EXIST C:\output echo C:\output must be mounted as a volume & echo.`
 & echo IF NOT EXIST C:\output EXIT 1 & echo.`
 & echo mkdir C:\output\lib `
-& echo xcopy C:\dev\ThermoRawFileParser\bin\x64\Debug C:\output\lib /S /Q & echo.`
+& echo xcopy C:\dev\ThermoRawFileParser\bin\x64\Release C:\output\lib /S /Q & echo.`
 & echo cd C:\dev\Embeddinator-4000\build\lib\Debug\ `
 & echo "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat" ^&^& Embeddinator-4000.exe -v -gen Java -p Windows -c -t shared -o C:/output/windows_wrapper C:/output/lib/ThermoRawFileParser.dll `
 ) > bindgen.bat

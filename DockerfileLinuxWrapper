@@ -55,8 +55,9 @@ RUN chmod +x Embeddinator-4000.exe
 RUN echo 'cd /home/ \n\
 git clone -b master --single-branch https://github.com/david-bouyssie/ThermoRawFileParser.git \n\
 cd /home/ThermoRawFileParser/ \n\
-msbuild /p:AllowUnsafeBlocks=true \n\
+msbuild /p:AllowUnsafeBlocks=true /p:Configuration=Release /p:Platform=x64 \n\
 cd /home/Embeddinator-4000/build/lib/Debug/ \n\
-mono Embeddinator-4000.exe -v -gen Java -p Linux -c -t shared -o /home/linux_wrapper /home/ThermoRawFileParser/bin/x64/Debug/ThermoRawFileParser.dll' > bindgen.sh 
+mono Embeddinator-4000.exe -v -gen Java -p Linux -c -t shared -o /home/linux_wrapper /home/ThermoRawFileParser/bin/x64/Release/ThermoRawFileParser.dll  \n\
+mv /home/ThermoRawFileParser/bin/x64/Release/ /home/linux_wrapper/lib/' > bindgen.sh
 
 ENTRYPOINT ["/bin/bash","/home/Embeddinator-4000/build/lib/Debug/bindgen.sh"]
